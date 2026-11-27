@@ -5,7 +5,7 @@
 
 import os
 
-from flask import flash, g, redirect, url_for, render_template
+from flask import abort, flash, g, redirect, url_for, render_template
 from flask_babel import gettext
 from flask_login import login_required
 
@@ -72,12 +72,16 @@ def delete_ticket(ticket_id):
 @login_required
 def delete_post(post_id):
     # check user is authorised to delete posts. Only admin can do this.
+    # H-02: la comprobacion debe detener la peticion (fallar de forma segura); antes solo mostraba
+    # un aviso y continuaba hasta borrar la publicacion.
     if not g.user.is_admin:
-        flash(gettext('You are not authorised to delete posts'), category='warning')
-
-    form = ConfirmPassword()
+        abort(403)
 
     post = FlicketPost.query.filter_by(id=post_id).first()
+    if post is None:
+        abort(404)
+
+    form = ConfirmPassword()
 
     if form.validate_on_submit():
 
