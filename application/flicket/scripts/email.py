@@ -137,17 +137,20 @@ class FlicketMail:
 
         self.send_email(title, self.sender, recipient, html_body)
 
-    def password_reset(self, user, new_password):
+    def password_reset(self, user, reset_url, expires_minutes):
         """
-        Sends email to user notifying of password reset.
+        Sends email to user with a signed, single-use link to choose a new password (H-04).
+        The password itself is never sent by email.
         :param user:
-        :param new_password:
+        :param reset_url: absolute URL with the signed token.
+        :param expires_minutes: validity of the link.
         :return:
         """
 
         recipient = [user.email]
         title = 'Password Reset'
-        html_body = render_template('email_password_reset.html', title=title, new_password=new_password)
+        html_body = render_template('email_password_reset.html', title=title, reset_url=reset_url,
+                                    expires_minutes=expires_minutes)
 
         self.send_email(title, self.sender, recipient, html_body)
 

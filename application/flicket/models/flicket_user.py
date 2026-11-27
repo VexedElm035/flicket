@@ -6,7 +6,7 @@
 import base64
 from datetime import datetime, timedelta
 import os
-import random
+import secrets
 import string
 
 import bcrypt
@@ -151,7 +151,8 @@ class FlicketUser(PaginatedAPIMixin, UserMixin, Base):
         """
 
         characters = string.ascii_letters + string.digits
-        password = ''.join(random.sample(characters, 12))
+        # H-04 / CWE-338: generador criptografico en lugar de random (Mersenne Twister).
+        password = ''.join(secrets.choice(characters) for _ in range(16))
 
         return password
 

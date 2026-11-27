@@ -11,7 +11,7 @@ from wtforms import BooleanField
 from wtforms import PasswordField
 from wtforms import StringField
 from wtforms import SubmitField
-from wtforms.validators import DataRequired
+from wtforms.validators import DataRequired, EqualTo
 
 from application import app
 from application.flicket.models.flicket_user import FlicketUser
@@ -94,3 +94,11 @@ class PasswordResetForm(FlaskForm):
     """ Log in form. """
     email = StringField(lazy_gettext('email'), validators=[DataRequired()])
     submit = SubmitField(lazy_gettext('reset password'), render_kw=form_class_button)
+
+
+class PasswordResetConfirmForm(FlaskForm):
+    """ H-04: el titular elige su nueva contrasena desde el enlace firmado. """
+    password = PasswordField(lazy_gettext('new password'), validators=[DataRequired()])
+    confirm = PasswordField(lazy_gettext('confirm new password'),
+                            validators=[DataRequired(), EqualTo('password', message='Passwords must match.')])
+    submit = SubmitField(lazy_gettext('set new password'), render_kw=form_class_button)

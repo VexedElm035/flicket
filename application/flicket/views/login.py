@@ -24,11 +24,15 @@ from application import app, lm, db, flicket_bp
 from application import __version__
 from application.flicket_admin.models.flicket_config import FlicketConfig
 from application.flicket.forms.form_login import LogInForm
-from application.flicket.forms.form_login import PasswordResetForm
+from application.flicket.forms.form_login import PasswordResetForm, PasswordResetConfirmForm
 from application.flicket.models.flicket_user import FlicketUser
 from application.flicket.scripts.email import FlicketMail
 from application.flicket.scripts.flicket_config import set_flicket_config
+from application.flicket.scripts.functions_login import check_password_format, password_requirements
 from application.flicket.scripts.hash_password import hash_password
+from application.flicket.scripts.password_reset import (RESET_TOKEN_MAX_AGE,
+                                                       generate_reset_token,
+                                                       user_from_reset_token)
 
 
 # functions for redirecting user back from whence they came.
@@ -135,17 +139,46 @@ def password_reset():
     form = PasswordResetForm()
 
     if form.validate_on_submit():
-        new_password = FlicketUser.generate_password()
-        hashed_password = hash_password(new_password)
+        # H-04: la solicitud ya no cambia la contrasena. Solo se envia un enlace firmado al titular,
+        # y la respuesta es identica exista o no el correo (sin oraculo de enumeracion ni error 500).
         user = FlicketUser.query.filter_by(email=form.email.data).first()
-        user.password = hashed_password
-        db.session.commit()
+        if user is not None and not user.disabled:
+            try:
+                email = FlicketMail()
+                reset_url = app.config['base_url'] + url_for('flicket_bp.password_reset_confirm',
+                                                             token=generate_reset_token(user))
+                email.password_reset(user, reset_url, RESET_TOKEN_MAX_AGE // 60)
+            except Exception:
+                # Falla segura: el error se registra en el servidor y el usuario ve la misma respuesta.
+                app.logger.exception('No se pudo enviar el correo de restablecimiento.')
 
-        email = FlicketMail()
-        email.password_reset(user, new_password)
-
-        flash(gettext('Password reset. Please check your email for your new password'))
+        flash(gettext('If the address is registered, you will receive an email with a link to reset your '
+                      'password.'))
         return redirect(url_for('flicket_bp.login'))
 
     title = 'Password Reset'
     return render_template('flicket_password_reset.html', form=form, title=title)
+
+
+# H-04: el titular abre el enlace firmado y elige su nueva contrasena
+@flicket_bp.route(app.config['WEBHOME'] + 'password_reset/<token>', methods=['GET', 'POST'])
+def password_reset_confirm(token):
+    user = user_from_reset_token(token)
+    if user is None:
+        flash(gettext('The password reset link is invalid or has expired.'), category='warning')
+        return redirect(url_for('flicket_bp.password_reset'))
+
+    form = PasswordResetConfirmForm()
+
+    if form.validate_on_submit():
+        if not check_password_format(form.password.data, user.username, user.email):
+            flash(password_requirements, category='warning')
+        else:
+            # Al cambiar la contrasena cambia su huella, por lo que el enlace deja de ser valido.
+            user.password = hash_password(form.password.data)
+            db.session.commit()
+            flash(gettext('Your password has been changed. Please log in.'), category='success')
+            return redirect(url_for('flicket_bp.login'))
+
+    title = 'Set New Password'
+    return render_template('flicket_password_reset_confirm.html', form=form, title=title)
