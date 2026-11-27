@@ -5,6 +5,7 @@ set -e
 python3 - << 'EOF'
 import os
 import json
+import sys
 from base64 import b64encode
 
 config_file = os.environ.get('FLICKET_CONFIG_FILE', 'config.json')
@@ -12,13 +13,21 @@ config_file = os.environ.get('FLICKET_CONFIG_FILE', 'config.json')
 def random_string(bytes_=24):
     return b64encode(os.urandom(bytes_)).decode('utf-8')
 
+# Falla segura: sin contrasenas por defecto. Si falta un secreto o sigue con el valor de .env.example,
+# el contenedor no arranca.
+REQUIRED = ['DB_PASSWORD', 'FLASK_ADMIN_PASSWORD', 'SECRET_KEY', 'NOTIFICATION_USER_PASSWORD']
+bad = [name for name in REQUIRED if os.environ.get(name, '') in ('', 'cambia-esto')]
+if bad:
+    print('Error: define valores propios en .env para: ' + ', '.join(bad))
+    sys.exit(1)
+
 if not os.path.exists(config_file) or os.environ.get('FORCE_CONFIG_GEN') == '1':
     print(f"Generating {config_file} from environment variables...")
     config_values = {
         'db_type': int(os.environ.get('DB_TYPE', '3')),
         'db_driver': os.environ.get('DB_DRIVER', 'pymysql'),
         'db_username': os.environ.get('DB_USER', os.environ.get('DB_USERNAME', 'flicket')),
-        'db_password': os.environ.get('DB_PASSWORD', 'flicket_password'),
+        'db_password': os.environ['DB_PASSWORD'],
         'db_url': os.environ.get('DB_HOST', os.environ.get('DB_URL', 'db')),
         'db_port': os.environ.get('DB_PORT', '3306'),
         'db_name': os.environ.get('DB_NAME', 'flicket'),

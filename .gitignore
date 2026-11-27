@@ -11,6 +11,11 @@ __reference__
 __other__
 config.json
 users.json
+
+# secretos del despliegue con Docker (se versiona solo .env.example)
+.env
+.env.*
+!.env.example
 migrations_laptop
 migrations_desktop
 test.db

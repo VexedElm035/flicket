@@ -27,7 +27,8 @@ from application.flicket.models.flicket_user import FlicketGroup, FlicketUser
 def auto_setup():
     with app.app_context():
         admin_username = os.environ.get('FLASK_ADMIN_USERNAME', 'admin')
-        admin_password = os.environ.get('FLASK_ADMIN_PASSWORD', 'admin')
+        # Sin contrasena por defecto: docker-entrypoint.sh ya verifico que la variable exista.
+        admin_password = os.environ['FLASK_ADMIN_PASSWORD']
         admin_email = os.environ.get('FLASK_ADMIN_EMAIL', 'admin@example.com')
         base_url = os.environ.get('FLASK_BASE_URL', 'http://localhost:5000')
 

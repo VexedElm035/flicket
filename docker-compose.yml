@@ -1,19 +1,23 @@
+# Despliegue de laboratorio de Flicket.
+# Las credenciales y secretos se leen de .env (no versionado); ver .env.example.
+# La sintaxis ${VAR:?mensaje} detiene el despliegue si falta una variable (falla segura: no hay valores por defecto).
+
 services:
   db:
     image: mariadb:10.11
     container_name: flicket-db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root_password
-      MYSQL_DATABASE: flicket
-      MYSQL_USER: flicket
-      MYSQL_PASSWORD: flicket_password
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Define DB_ROOT_PASSWORD en .env}
+      MARIADB_DATABASE: ${DB_NAME:-flicket}
+      MARIADB_USER: ${DB_USER:-flicket}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
     volumes:
       - mariadb_data:/var/lib/mysql
-    ports:
-      - "3306:3306"
+    # Sin "ports": la base de datos solo es accesible desde la red interna de Docker.
     healthcheck:
-      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -u root -proot_password --silent || exit 1"]
+      # ping responde aunque no haya credenciales, asi no se expone ninguna contrasena en la linea de comandos.
+      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 --silent || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -31,21 +35,22 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "${PORT:-5050}:5000"
+      # Solo en la interfaz local del anfitrion.
+      - "127.0.0.1:${PORT:-5050}:5000"
     environment:
-      - DB_TYPE=3
-      - DB_DRIVER=pymysql
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_NAME=flicket
-      - DB_USER=flicket
-      - DB_PASSWORD=flicket_password
-      - FLASK_ADMIN_USERNAME=admin
-      - FLASK_ADMIN_PASSWORD=admin
-      - FLASK_ADMIN_EMAIL=admin@example.com
-      - FLASK_BASE_URL=http://localhost:${PORT:-5050}
-      - SECRET_KEY=flicket-secret-key-please-change-in-production
-      - NOTIFICATION_USER_PASSWORD=notification-secret-password-change-me
+      DB_TYPE: 3
+      DB_DRIVER: pymysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-flicket}
+      DB_USER: ${DB_USER:-flicket}
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+      FLASK_ADMIN_USERNAME: ${FLASK_ADMIN_USERNAME:-admin}
+      FLASK_ADMIN_PASSWORD: ${FLASK_ADMIN_PASSWORD:?Define FLASK_ADMIN_PASSWORD en .env}
+      FLASK_ADMIN_EMAIL: ${FLASK_ADMIN_EMAIL:-admin@example.com}
+      FLASK_BASE_URL: http://localhost:${PORT:-5050}
+      SECRET_KEY: ${SECRET_KEY:?Define SECRET_KEY en .env}
+      NOTIFICATION_USER_PASSWORD: ${NOTIFICATION_USER_PASSWORD:?Define NOTIFICATION_USER_PASSWORD en .env}
     volumes:
       - flicket_uploads:/app/application/flicket/static/flicket_uploads
       - flicket_avatars:/app/application/flicket/static/flicket_avatars
