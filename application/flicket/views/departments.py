@@ -3,7 +3,7 @@
 #
 # Flicket - copyright Paul Bourne: evereux@gmail.com
 
-from flask import flash, redirect, url_for, render_template
+from flask import abort, flash, g, redirect, request, url_for, render_template
 from flask_babel import gettext
 from flask_login import login_required
 
@@ -11,6 +11,7 @@ from . import flicket_bp
 from application import app, db
 from application.flicket.forms.flicket_forms import DepartmentForm
 from application.flicket.models.flicket_models import FlicketDepartment
+from application.flicket.scripts.access import is_staff, staff_required
 
 
 # create ticket
@@ -18,6 +19,10 @@ from application.flicket.models.flicket_models import FlicketDepartment
 @flicket_bp.route(app.config['FLICKET'] + 'departments/<int:page>/', methods=['GET', 'POST'])
 @login_required
 def departments(page=1):
+    # H-03: cualquier usuario puede consultar la lista, pero solo el personal puede crear departamentos.
+    if request.method == 'POST' and not is_staff(g.user):
+        abort(403)
+
     form = DepartmentForm()
 
     query = FlicketDepartment.query.order_by(FlicketDepartment.department.asc())
@@ -42,11 +47,14 @@ def departments(page=1):
 
 @flicket_bp.route(app.config['FLICKET'] + 'department_edit/<int:department_id>/', methods=['GET', 'POST'])
 @login_required
+@staff_required  # H-03: solo el personal puede editar departamentos
 def department_edit(department_id=False):
     if department_id:
 
         form = DepartmentForm()
         query = FlicketDepartment.query.filter_by(id=department_id).first()
+        if query is None:
+            abort(404)
 
         if form.validate_on_submit():
             query.department = form.department.data

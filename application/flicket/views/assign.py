@@ -13,6 +13,7 @@ from application import app, db
 from application.flicket.forms.flicket_forms import AssignUserForm
 from application.flicket.models.flicket_models import FlicketTicket, FlicketStatus, FlicketSubscription
 from application.flicket.models.flicket_user import FlicketUser
+from application.flicket.scripts.access import staff_required
 from application.flicket.scripts.flicket_functions import add_action
 from application.flicket.scripts.email import FlicketMail
 from . import flicket_bp
@@ -21,6 +22,7 @@ from . import flicket_bp
 # tickets main
 @flicket_bp.route(app.config['FLICKET'] + 'ticket_assign/<int:ticket_id>/', methods=['GET', 'POST'])
 @login_required
+@staff_required  # H-03: solo el personal puede asignar tickets
 def ticket_assign(ticket_id=False):
     form = AssignUserForm()
     ticket = FlicketTicket.query.filter_by(id=ticket_id).one()

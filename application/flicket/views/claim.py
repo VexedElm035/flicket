@@ -5,13 +5,14 @@
 
 import datetime
 
-from flask import redirect, url_for, flash, g
+from flask import abort, redirect, url_for, flash, g
 from flask_babel import gettext
 from flask_login import login_required
 
 from . import flicket_bp
 from application import app, db
 from application.flicket.models.flicket_models import FlicketTicket, FlicketStatus
+from application.flicket.scripts.access import staff_required
 from application.flicket.scripts.flicket_functions import add_action
 from application.flicket.scripts.email import FlicketMail
 
@@ -19,10 +20,13 @@ from application.flicket.scripts.email import FlicketMail
 # view for self claim a ticket
 @flicket_bp.route(app.config['FLICKET'] + 'ticket_claim/<int:ticket_id>/', methods=['GET', 'POST'])
 @login_required
+@staff_required  # H-03: solo el personal puede reclamar tickets
 def ticket_claim(ticket_id=False):
     if ticket_id:
         # claim ticket
         ticket = FlicketTicket.query.filter_by(id=ticket_id).first()
+        if ticket is None:
+            abort(404)
 
         if ticket.assigned == g.user:
             flash(gettext('You have already been assigned this ticket.'), category='success')

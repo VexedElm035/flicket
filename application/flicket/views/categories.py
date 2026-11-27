@@ -3,7 +3,7 @@
 #
 # Flicket - copyright Paul Bourne: evereux@gmail.com
 
-from flask import flash, redirect, url_for, render_template
+from flask import abort, flash, g, redirect, request, url_for, render_template
 from flask_login import login_required
 from flask_babel import gettext
 
@@ -11,12 +11,17 @@ from . import flicket_bp
 from application import app, db
 from application.flicket.forms.flicket_forms import CategoryForm
 from application.flicket.models.flicket_models import FlicketCategory, FlicketDepartment
+from application.flicket.scripts.access import is_staff, staff_required
 
 
 # create ticket
 @flicket_bp.route(app.config['FLICKET'] + 'categories/<int:department_id>/', methods=['GET', 'POST'])
 @login_required
 def categories(department_id=False):
+    # H-03: cualquier usuario puede consultar las categorias, pero solo el personal puede crearlas.
+    if request.method == 'POST' and not is_staff(g.user):
+        abort(403)
+
     form = CategoryForm()
     categories = FlicketCategory.query.order_by(FlicketCategory.category.asc()).filter_by(department_id=department_id)
     department = FlicketDepartment.query.filter_by(id=department_id).first()
@@ -41,11 +46,14 @@ def categories(department_id=False):
 
 @flicket_bp.route(app.config['FLICKET'] + 'category_edit/<int:category_id>/', methods=['GET', 'POST'])
 @login_required
+@staff_required  # H-03: solo el personal puede editar categorias
 def category_edit(category_id=False):
     if category_id:
 
         form = CategoryForm()
         category = FlicketCategory.query.filter_by(id=category_id).first()
+        if category is None:
+            abort(404)
         form.department_id.data = category.department_id
 
         if form.validate_on_submit():
