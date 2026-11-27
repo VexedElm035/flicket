@@ -1,0 +1,8 @@
+PASA   img con onerror: se elimina el manejador
+PASA   script: se elimina la etiqueta
+PASA   enlace javascript: se elimina el esquema
+PASA   atributo onclick: se elimina
+PASA   formato permitido se conserva
+PASA   enlaces con rel=noopener
+PASA   texto vacio
+PASA   error al convertir: texto escapado, sin excepcion

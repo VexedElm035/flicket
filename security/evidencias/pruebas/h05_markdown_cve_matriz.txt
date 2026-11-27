@@ -1,0 +1,5 @@
+# CVE-2025-69534: entrada '<![' por version de CPython y de Markdown
+python 3.11.13 | markdown 3.5.1 | FALLA (AssertionError)
+python 3.11.13 | markdown 3.8.2 | sin error
+python 3.11.14 | markdown 3.5.1 | sin error
+python 3.11.14 | markdown 3.8.2 | sin error

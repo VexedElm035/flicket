@@ -1,0 +1,64 @@
+Run started:2026-11-27 07:36:54.522434
+
+Test results:
+>> Issue: [B311:blacklist] Standard pseudo-random generators are not suitable for security/cryptographic purposes.
+   Severity: Low   Confidence: High
+   CWE: CWE-330 (https://cwe.mitre.org/data/definitions/330.html)
+   More Info: https://bandit.readthedocs.io/en/1.8.6/blacklists/blacklist_calls.html#b311-random
+   Location: application/flicket/scripts/flicket_upload.py:53:36
+52	            chars = string.ascii_lowercase + string.digits
+53	            output_string = ''.join(random.choice(chars) for _ in range(characters))
+54	            new_file_name = output_string + '.' + self.file_extension
+
+--------------------------------------------------
+>> Issue: [B105:hardcoded_password_string] Possible hardcoded password: ''
+   Severity: Low   Confidence: Medium
+   CWE: CWE-259 (https://cwe.mitre.org/data/definitions/259.html)
+   More Info: https://bandit.readthedocs.io/en/1.8.6/plugins/b105_hardcoded_password_string.html
+   Location: application/flicket/views/user_edit.py:66:24
+65	        password = form.new_password.data
+66	        if (password != '') and (check_password_format(password, user.username, user.email)):
+67	            password = hash_password(password)
+
+--------------------------------------------------
+>> Issue: [B105:hardcoded_password_string] Possible hardcoded password: ''
+   Severity: Low   Confidence: Medium
+   CWE: CWE-259 (https://cwe.mitre.org/data/definitions/259.html)
+   More Info: https://bandit.readthedocs.io/en/1.8.6/plugins/b105_hardcoded_password_string.html
+   Location: application/flicket/views/user_edit.py:70:25
+69	            flash('You have changed your password.', category='success')
+70	        elif password != '':
+71	            flash('Password not changed.', category='warning')
+
+--------------------------------------------------
+>> Issue: [B704:markupsafe_markup_xss] Potential XSS with ``flask.Markup`` detected. Do not use ``Markup`` on untrusted data.
+   Severity: Medium   Confidence: High
+   CWE: CWE-79 (https://cwe.mitre.org/data/definitions/79.html)
+   More Info: https://bandit.readthedocs.io/en/1.8.6/plugins/b704_markupsafe_markup_xss.html
+   Location: application/flicket_admin/views/view_email_test.py:32:14
+31	        mail.test_email([form.email_address.data])
+32	        flash(Markup(gettext(
+33	            'Flicket has tried to send an email to the address you entered. Please check your inbox. If no email has '
+34	            'arrived please double check the <a href="{}{url_for("admin_bp.config")}">config</a>'
+35	            ' settings.'.format(app.config["base_url"]))),
+36	            category='warning')
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 5763
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 1
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 3
+		Medium: 1
+		High: 0
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 0
+		Medium: 2
+		High: 2
+Files skipped (0):
